@@ -21,10 +21,11 @@ dependencies {
     compile("com.fasterxml.jackson.core", "jackson-databind", "2.9.7")
     compile("org.apache.httpcomponents", "httpclient", "4.5.6")
     compile("org.apache.httpcomponents", "httpcore", "4.4.10")
-    testCompile("org.mockito", "mockito-core", "2.23.0")
-    testCompile("org.mockito", "mockito-junit-jupiter", "2.23.0")
+//    testCompile("org.mockito", "mockito-core", "2.23.0")
+//    testCompile("org.mockito", "mockito-junit-jupiter", "2.23.0")
     testCompile("com.xebialabs.restito", "restito", "0.9.3")
     testCompile("org.junit.jupiter", "junit-jupiter-api", "5.3.1")
+    testImplementation("io.mockk:mockk:1.8.9")
 }
 
 tasks.withType<KotlinCompile> {

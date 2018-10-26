@@ -1,9 +1,11 @@
 package ru.golchin
 
 import org.apache.http.HttpStatus.SC_OK
+import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.utils.URIBuilder
 import org.apache.http.impl.client.HttpClients
+import java.io.IOException
 import java.io.InputStream
 import java.lang.Math.max
 import java.lang.Thread.sleep
@@ -41,14 +43,18 @@ open class PagingClient(private val host: String,
         while (keepGoing) {
             val elapsedMillis = measureTimeMillis {
                 val httpGet = HttpGet(buildUri(endpoint, requestParams))
-                println(httpGet.uri)
-                val httpResponse = HttpClients.createDefault().execute(httpGet)
-                val statusCode = httpResponse.statusLine.statusCode
-                println(statusCode)
-                if (statusCode != SC_OK)
-                    throw ServiceInvocationException("unexpected error: $statusCode " +
-                            "while handling request: ${httpGet.uri}")
-                keepGoing = pageHandler(httpResponse.entity.content)
+                val httpResponse: CloseableHttpResponse?
+                try {
+                    httpResponse = HttpClients.createDefault().execute(httpGet)
+                    val statusCode = httpResponse.statusLine.statusCode
+                    if (statusCode != SC_OK)
+                        throw ServiceInvocationException("unexpected error: $statusCode " +
+                                "while handling request: ${httpGet.uri}")
+                    keepGoing = pageHandler(httpResponse.entity.content)
+                } catch (e: IOException) {
+                    throw ServiceInvocationException("i/o error while connecting to ${httpGet.uri}. " +
+                            "make sure you are connected to the internet")
+                }
             }
             sleep(max(0, waitIntervalMillis - elapsedMillis))
         }
