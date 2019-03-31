@@ -14,21 +14,25 @@ trait ProductRoutes extends JsonSupport with ProductRepository with UserReposito
     pathPrefix("products") {
       concat(
         get {
-          parameterMap { params => {
-            println(params)
-            val productSource = findByTitle(params("title"))
-            val userSource = findByLogin(params("user"))
-            val eventualProduct: Future[Product] = productSource.zip(userSource)
-              .runWith(Sink.head)
-              .map { case (product: Product, user: User) =>
-                val convertedCost = Currency.convert(product.cost, user.currency)
-                Product(product.title, convertedCost)
+          path(Segment) { title =>
+            parameterMap { params => {
+              val user = params.get("user")
+              if (user.isEmpty)
+                complete("No user specified")
+              val productSource = findByTitle(title)
+              val userSource = findByLogin(params("user"))
+              val eventualProduct: Future[Product] = productSource.zip(userSource)
+                .runWith(Sink.head)
+                .map { case (product: Product, user: User) =>
+                  val convertedCost = Currency.convert(product.cost, user.currency)
+                  Product(product.title, convertedCost)
+                }
+              onComplete(eventualProduct) {
+                case Success(v) => complete(v.toString)
+                case Failure(ex) => complete(s"An error occurred: ${ex.getMessage}")
               }
-            onComplete(eventualProduct) {
-              case Success(v) => complete(v.toString)
-              case Failure(ex) => complete(s"An error occurred: ${ex.getMessage}")
             }
-          }
+            }
           }
         },
         post {
